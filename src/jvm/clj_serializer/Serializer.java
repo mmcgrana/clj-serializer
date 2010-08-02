@@ -33,8 +33,7 @@ public class Serializer {
   private static final byte VECTOR_TYPE =      11;
   private static final byte LIST_TYPE =        12;
   private static final byte SET_TYPE =         13;  // not yet implemented
-  
-  private static final byte FLOAT_TYPE =         14;
+  private static final byte FLOAT_TYPE =       14;
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -110,12 +109,12 @@ public class Serializer {
                (obj instanceof ISeq)) {
       ISeq seq = ((Seqable) obj).seq();
       int len = seq.count();
-		  dos.writeByte(LIST_TYPE);
-	    dos.writeInt(len);
-	    while (seq != null) {
-	      serialize(dos, seq.first());
-	      seq = seq.next();
-	    }
+      dos.writeByte(LIST_TYPE);
+      dos.writeInt(len);
+      while (seq != null) {
+        serialize(dos, seq.first());
+        seq = seq.next();
+      }
 
     } else {
       throw new IOException("Cannot serialize " + obj);
