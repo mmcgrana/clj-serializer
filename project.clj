@@ -1,4 +1,4 @@
-(defproject clj-serializer "0.1.0"
+(defproject clj-serializer "0.1.1"
   :description "Fast binary serialization and deserialization for Clojure data structures."
   :url "http://github.com/mmcgrana/clj-serializer"
   :source-path "src/clj"
