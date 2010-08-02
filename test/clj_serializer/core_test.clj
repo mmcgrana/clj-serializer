@@ -11,6 +11,7 @@
    :long 52001110638799097
    :bigint 9223372036854775808
    :double 1.23
+   :float (float 123/456789)
    :boolean true
    :nil nil
    :map {"hi" 9 "low" 0}

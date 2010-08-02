@@ -34,6 +34,8 @@ public class Serializer {
   private static final byte LIST_TYPE =        12;
   private static final byte SET_TYPE =         13;  // not yet implemented
   
+  private static final byte FLOAT_TYPE =         14;
+
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   public static void serialize(DataOutput dos, Object obj) throws IOException {
@@ -67,6 +69,10 @@ public class Serializer {
       dos.writeByte(BIG_INTEGER_TYPE);
       dos.writeInt(byteSize);
       dos.write(bytes, 0, byteSize);
+
+    } else if (obj instanceof Float) {
+      dos.writeByte(FLOAT_TYPE);
+      dos.writeFloat((Float) obj);
 
     } else if (obj instanceof Double) {
       dos.writeByte(DOUBLE_TYPE);
@@ -143,6 +149,9 @@ public class Serializer {
           byte[] bytes = new byte[byteSize];
           dis.readFully(bytes, 0, byteSize);
           return new BigInteger(bytes);
+
+        case FLOAT_TYPE:
+          return dis.readFloat();
 
         case DOUBLE_TYPE:
           return dis.readDouble();
