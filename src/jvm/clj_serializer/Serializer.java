@@ -14,6 +14,7 @@ import clojure.lang.LazilyPersistentVector;
 import clojure.lang.IPersistentList;
 import clojure.lang.IPersistentSet;
 import clojure.lang.ISeq;
+import clojure.lang.PersistentList;
 import clojure.lang.Seqable;
 import clojure.lang.ArraySeq;
 import clojure.lang.Keyword;
@@ -118,14 +119,15 @@ public class Serializer {
     } else if ((obj instanceof IPersistentList) ||
                (obj instanceof ISeq)) {
       ISeq seq = ((Seqable) obj).seq();
-      int len = seq.count();
+      int len = (seq == null) ? 0 : seq.count();
+
       dos.writeByte(LIST_TYPE);
       dos.writeInt(len);
+
       while (seq != null) {
         serialize(dos, seq.first());
         seq = seq.next();
       }
-
     } else {
       throw new IOException("Cannot serialize " + obj);
     }
@@ -194,13 +196,18 @@ public class Serializer {
             sObjs[i] = deserialize(dis, eofValue);
           }
           return RT.set(sObjs);
+
         case LIST_TYPE:
           int lLen = dis.readInt();
-          Object[] lObjs = new Object[lLen];
-          for (int i = 0; i < lLen; i++) {
-            lObjs[i] = deserialize(dis, eofValue);
+          if (lLen == 0) {
+            return PersistentList.EMPTY;
+          } else {
+            Object[] lObjs = new Object[lLen];
+            for (int i = 0; i < lLen; i++) {
+              lObjs[i] = deserialize(dis, eofValue);
+            }
+            return ArraySeq.create(lObjs);
           }
-          return ArraySeq.create(lObjs);
 
         default:
           throw new IOException("Cannot deserialize " + typeByte);
