@@ -12,6 +12,7 @@ import clojure.lang.IMapEntry;
 import clojure.lang.IPersistentVector;
 import clojure.lang.LazilyPersistentVector;
 import clojure.lang.IPersistentList;
+import clojure.lang.IPersistentSet;
 import clojure.lang.ISeq;
 import clojure.lang.Seqable;
 import clojure.lang.ArraySeq;
@@ -32,7 +33,7 @@ public class Serializer {
   private static final byte MAP_TYPE =         10;
   private static final byte VECTOR_TYPE =      11;
   private static final byte LIST_TYPE =        12;
-  private static final byte SET_TYPE =         13;  // not yet implemented
+  private static final byte SET_TYPE =         13;
   private static final byte FLOAT_TYPE =       14;
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -95,7 +96,16 @@ public class Serializer {
         serialize(dos, me.val());
         mSeq = mSeq.next();
       }
+    } else if (obj instanceof IPersistentSet) {
+      IPersistentSet set = (IPersistentSet) obj;
+      ISeq sSeq = set.seq();
 
+      dos.writeByte(SET_TYPE);
+      dos.writeInt(set.count());
+      while (sSeq != null) {
+          serialize(dos, sSeq.first());
+          sSeq = sSeq.next();
+      }
     } else if (obj instanceof IPersistentVector) {
       IPersistentVector vec = (IPersistentVector) obj;
       int len = vec.count();
@@ -177,6 +187,13 @@ public class Serializer {
           }
           return LazilyPersistentVector.createOwning(vObjs);
 
+        case SET_TYPE:
+          int  sLen = dis.readInt();
+          Object[] sObjs = new Object[sLen];
+          for (int i = 0; i < sLen; i++) {
+            sObjs[i] = deserialize(dis, eofValue);
+          }
+          return RT.set(sObjs);
         case LIST_TYPE:
           int lLen = dis.readInt();
           Object[] lObjs = new Object[lLen];
