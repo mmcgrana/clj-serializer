@@ -16,6 +16,8 @@
    :nil nil
    :map {"hi" 9 "low" 0}
    :vector ["a" "b" "c"]
+   :set #{"a" "b" "c"}
+   :emptylist '()
    :list '(1 2 3)})
 
 (deftest test-roundtrip

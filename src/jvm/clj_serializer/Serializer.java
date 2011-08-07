@@ -12,7 +12,9 @@ import clojure.lang.IMapEntry;
 import clojure.lang.IPersistentVector;
 import clojure.lang.LazilyPersistentVector;
 import clojure.lang.IPersistentList;
+import clojure.lang.IPersistentSet;
 import clojure.lang.ISeq;
+import clojure.lang.PersistentList;
 import clojure.lang.Seqable;
 import clojure.lang.ArraySeq;
 import clojure.lang.Keyword;
@@ -32,7 +34,7 @@ public class Serializer {
   private static final byte MAP_TYPE =         10;
   private static final byte VECTOR_TYPE =      11;
   private static final byte LIST_TYPE =        12;
-  private static final byte SET_TYPE =         13;  // not yet implemented
+  private static final byte SET_TYPE =         13;
   private static final byte FLOAT_TYPE =       14;
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -95,7 +97,16 @@ public class Serializer {
         serialize(dos, me.val());
         mSeq = mSeq.next();
       }
+    } else if (obj instanceof IPersistentSet) {
+      IPersistentSet set = (IPersistentSet) obj;
+      ISeq sSeq = set.seq();
 
+      dos.writeByte(SET_TYPE);
+      dos.writeInt(set.count());
+      while (sSeq != null) {
+          serialize(dos, sSeq.first());
+          sSeq = sSeq.next();
+      }
     } else if (obj instanceof IPersistentVector) {
       IPersistentVector vec = (IPersistentVector) obj;
       int len = vec.count();
@@ -108,14 +119,15 @@ public class Serializer {
     } else if ((obj instanceof IPersistentList) ||
                (obj instanceof ISeq)) {
       ISeq seq = ((Seqable) obj).seq();
-      int len = seq.count();
+      int len = (seq == null) ? 0 : seq.count();
+
       dos.writeByte(LIST_TYPE);
       dos.writeInt(len);
+
       while (seq != null) {
         serialize(dos, seq.first());
         seq = seq.next();
       }
-
     } else {
       throw new IOException("Cannot serialize " + obj);
     }
@@ -177,13 +189,25 @@ public class Serializer {
           }
           return LazilyPersistentVector.createOwning(vObjs);
 
+        case SET_TYPE:
+          int  sLen = dis.readInt();
+          Object[] sObjs = new Object[sLen];
+          for (int i = 0; i < sLen; i++) {
+            sObjs[i] = deserialize(dis, eofValue);
+          }
+          return RT.set(sObjs);
+
         case LIST_TYPE:
           int lLen = dis.readInt();
-          Object[] lObjs = new Object[lLen];
-          for (int i = 0; i < lLen; i++) {
-            lObjs[i] = deserialize(dis, eofValue);
+          if (lLen == 0) {
+            return PersistentList.EMPTY;
+          } else {
+            Object[] lObjs = new Object[lLen];
+            for (int i = 0; i < lLen; i++) {
+              lObjs[i] = deserialize(dis, eofValue);
+            }
+            return ArraySeq.create(lObjs);
           }
-          return ArraySeq.create(lObjs);
 
         default:
           throw new IOException("Cannot deserialize " + typeByte);
